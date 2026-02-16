@@ -1,7 +1,5 @@
 MCG Sepsis Admission Policy Implementation
-
 Author: Mansi Aher
-Date: February 2026
 
 Overview
 This project implements the MCG Sepsis & Other Febrile Illness (without focal infection) inpatient admission criteria as a structured policy in Python.
