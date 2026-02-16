@@ -1,48 +1,47 @@
-# MCG Sepsis Admission Policy Implementation
+MCG Sepsis Admission Policy Implementation
 
-Author: Mansi Aher  
-Date: February 2026  
+Author: Mansi Aher
+Date: February 2026
 
-## Overview
-
-This project implements the MCG Sepsis & Other Febrile Illness 
-(without focal infection) inpatient admission criteria as a structured policy in Python.
+Overview
+This project implements the MCG Sepsis & Other Febrile Illness (without focal infection) inpatient admission criteria as a structured policy in Python.
 
 Core Rule:
 Recommend inpatient admission if ≥ 1 admission criterion is present.
 
 The system:
-- Tracks triggered criteria
-- Tracks missing inputs explicitly
-- Avoids unsafe assumptions
-- Provides human-readable output
-- Accepts JSON input for EHR-style integration
+Tracks triggered criteria
+Tracks missing inputs explicitly
+Avoids unsafe assumptions
+Provides human-readable output
+Accepts JSON input compatible with EHR-style integration
 
----
+Clinical Data Capture (Design Approach):
+In a real hospital environment, required inputs would be derived from:
+Vitals (e.g., oxygen saturation, blood pressure, temperature)
+Laboratory results (e.g., platelets, coagulation tests, cultures)
+Medication/treatment records (e.g., IV antibiotics, vasopressors)
+Clinical documentation and observation workflows
 
-## How to Run
 
-TRUE case:
+Data Structure
+Each admission criterion is modeled as:
+true → criterion met
+false → criterion not met
+null → data unavailable
 
-    python policy_json.py --input patient_true.json
+The policy logic evaluates these flags and generates:
+Admission recommendation
+Triggered criteria list
+Missing input list
+Clinical interpretation summary
 
-FALSE case:
+Assumptions:
+Qualitative terms (“severe,” “persistent”) are determined upstream.
+Missing inputs are not assumed to be false.
+This implementation supports clinical decision-making but does not replace physician judgment.
 
-    python policy_json.py --input patient_false.json
+To Run:
+TRUE case: python policy_json.py --input patient_true.json
 
----
-
-## Design Approach
-
-- Boolean flags represent clinically evaluated thresholds
-- Missing data (null) is explicitly tracked
-- Policy logic is separated from presentation layer
-- Structured for future integration into EHR systems
-
----
-
-## Assumptions
-
-- Clinical severity thresholds (e.g., severe, persistent) are determined upstream.
-- This implementation supports decision support, not autonomous diagnosis.
-- Final decisions must involve licensed clinicians.
+FALSE case: python policy_json.py --input patient_false.json

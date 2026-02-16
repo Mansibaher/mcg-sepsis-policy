@@ -1,25 +1,4 @@
-"""
-MCG Sepsis & Other Febrile Illness (without focal infection)
-Structured Admission Policy Implementation
-
-Author: Mansi Aher
-Date: February 2026
-
-Purpose:
-This script translates the MCG inpatient admission criteria into
-explicit, auditable programmatic rules.
-
-Clinical Logic:
-- If ANY admission criterion is met -> Recommend inpatient admission.
-- Missing data is explicitly tracked and never assumed.
-- Designed for integration with EHR-based decision support systems.
-
-Note:
-Qualitative terms such as "severe", "persistent", or
-"persists despite observation care" are assumed to be derived upstream
-from structured clinical workflows.
-"""
-
+# MCG Sepsis Admission Policy Implementation
 
 from __future__ import annotations
 
@@ -75,10 +54,7 @@ class PolicyDecision:
     debug: Dict[str, Any] = field(default_factory=dict)
 
 
-# Build internal criteria dictionary for evaluation
-# This allows easy extensibility if new criteria are added later.
-
-
+# Build internal criteria dictionary for evaluation. New criteria can be added later
 def evaluate_mcg_sepsis_admission(flags: MCGSepsisAdmissionFlags) -> PolicyDecision:
 
     criteria_map: Dict[str, Optional[bool]] = {
@@ -96,10 +72,18 @@ def evaluate_mcg_sepsis_admission(flags: MCGSepsisAdmissionFlags) -> PolicyDecis
         "parenteral_antimicrobials_inpatient_only": flags.parenteral_antimicrobials_inpatient_only,
         "isolation_required_not_possible_outside_hospital": flags.isolation_required_not_possible_outside_hospital,
     }
+    true_count = sum(v is True for v in criteria_map.values())
+    false_count = sum(v is False for v in criteria_map.values())
+    none_count = sum(v is None for v in criteria_map.values())
+
+    data_quality = {
+        "num_true": true_count,
+        "num_false": false_count,
+        "num_missing": none_count,
+        "total_criteria": len(criteria_map),
+    }
 
 # Identify which admission criteria are explicitly met
-# (True means clinician-defined threshold already satisfied)
-
     triggered_keys = [k for k, v in criteria_map.items() if v is True]
     missing_keys = [k for k, v in criteria_map.items() if v is None]
 
@@ -108,9 +92,7 @@ def evaluate_mcg_sepsis_admission(flags: MCGSepsisAdmissionFlags) -> PolicyDecis
 
     admit = len(triggered_keys) >= 1
 
-# Core logic:
-# Admission is recommended if >= 1 criterion is met
-
+# Core logic:Admission is recommended if >= 1 criterion is met
     summary = (
         "Recommend inpatient admission: >=1 MCG admission criterion met."
         if admit
@@ -123,26 +105,59 @@ def evaluate_mcg_sepsis_admission(flags: MCGSepsisAdmissionFlags) -> PolicyDecis
         triggered_criteria=triggered_labels,
         missing_inputs=missing_labels,
         summary=summary,
-        debug={"criteria_values": criteria_map},
+        debug={"criteria_values": criteria_map, "data_quality": data_quality}
     )
 
-# Loading Json files
-def load_flags_from_json(path: str) -> MCGSepsisAdmissionFlags:
+# Load Json files
+def load_flags_from_json(path: str) -> tuple[MCGSepsisAdmissionFlags, list[str]]:
     with open(path, "r", encoding="utf-8") as f:
         raw = json.load(f)
 
+    warnings: list[str] = []
+
     allowed_fields = set(MCGSepsisAdmissionFlags.__dataclass_fields__.keys())
-    filtered = {k: v for k, v in raw.items() if k in allowed_fields}
 
-    return MCGSepsisAdmissionFlags(**filtered)
+    # Warning for unknown keys
+    unknown = sorted([k for k in raw.keys() if k not in allowed_fields])
+    if unknown:
+        warnings.append(f"Unknown keys ignored (possible typos): {unknown}")
+
+    # Validate types for criteria fields (true/false/null)
+    criteria_fields = [k for k in allowed_fields if k not in ("patient_id", "encounter_id")]
+    for k in criteria_fields:
+        if k in raw:
+            v = raw[k]
+            if v is not None and not isinstance(v, bool):
+                warnings.append(
+                    f"Invalid type for '{k}': expected true/false/null, got {type(v).__name__}. Value ignored."
+                )
+                raw[k] = None
+
+    filtered = {k: raw.get(k) for k in allowed_fields if k in raw}
+    flags = MCGSepsisAdmissionFlags(**filtered)
+    return flags, warnings
 
 
-def print_decision(flags: MCGSepsisAdmissionFlags, decision: PolicyDecision) -> None:
+
+def print_decision(flags: MCGSepsisAdmissionFlags, decision: PolicyDecision, warnings: list[str] | None = None) -> None:
     print("\nMCG Sepsis Admission Policy")
     print("--------------------------------")
     print(f"Patient ID:   {flags.patient_id}")
     print(f"Encounter ID: {flags.encounter_id}")
 
+    dq = decision.debug.get("data_quality", {})
+    print("\nData Quality Summary:")
+    print(
+    f"  True: {dq.get('num_true', 0)} | False: {dq.get('num_false', 0)} | "
+    f"Missing: {dq.get('num_missing', 0)} | Total: {dq.get('total_criteria', 0)}"
+    )
+    
+    if warnings:
+        print("\nWarnings:")
+        for w in warnings:
+            print(" -", w)
+
+    
     print("\nAdmission Recommended:", decision.admit_inpatient)
     print("Summary:", decision.summary)
 
@@ -162,11 +177,13 @@ def print_decision(flags: MCGSepsisAdmissionFlags, decision: PolicyDecision) -> 
 
     print("\nClinical Interpretation:")
     if decision.admit_inpatient:
-        print(" At least one admission-level severity indicator is present.")
-        print(" Inpatient monitoring and management are recommended.")
+        print("  At least one admission-level severity indicator is present.")
+        if dq.get("num_missing", 0) > 0:
+            print("  Note: Some criteria are missing; decision is based on available evidence.")
     else:
-        print(" No admission-level severity indicators detected.")
-        print(" Consider outpatient or observation management per clinician judgment.")
+        print("  No admission-level severity indicators detected in available data.")
+        if dq.get("num_missing", 0) > 0:
+            print("  Note: Some criteria are missing; absence of evidence is not evidence of absence.")
 
 
 def main(argv: List[str]) -> int:
@@ -175,9 +192,10 @@ def main(argv: List[str]) -> int:
     args = parser.parse_args(argv)
 
     if args.input:
-        flags = load_flags_from_json(args.input)
+        flags, warnings = load_flags_from_json(args.input)
         decision = evaluate_mcg_sepsis_admission(flags)
-        print_decision(flags, decision)
+        print_decision(flags, decision, warnings)
+
     else:
         print("No input file provided. Please use --input <file.json>")
 
