@@ -1,0 +1,15 @@
+{
+  "patient_id": "P001",
+  "encounter_id": "E001",
+  "hypoxemia": true,
+  "hemodynamic_instability": false,
+  "altered_mental_status_severe_or_persistent": null,
+  "new_coagulopathy": null,
+  "tachypnea_persists_despite_observation": null,
+  "dehydration_severe_or_persistent": null,
+  "end_organ_dysfunction_severe_or_persistent": null,
+  "core_temp_below_35c_due_to_infection": null,
+  "parenteral_antimicrobials_inpatient_only": null,
+  "isolation_required_not_possible_outside_hospital": null,
+  "bacteremia_if_cultures_performed": null
+}

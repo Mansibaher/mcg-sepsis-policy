@@ -1,0 +1,16 @@
+{
+  "patient_id": "P002",
+  "encounter_id": "E002",
+  "hemodynamic_instability": false,
+  "bacteremia_if_cultures_performed": false,
+  "hypoxemia": false,
+  "altered_mental_status_severe_or_persistent": false,
+  "new_coagulopathy": false,
+  "tachypnea_persists_despite_observation": false,
+  "dehydration_severe_or_persistent": false,
+  "inability_to_maintain_oral_hydration_persists_after_observation": false,
+  "end_organ_dysfunction_severe_or_persistent": false,
+  "core_temp_below_35c_due_to_infection": false,
+  "parenteral_antimicrobials_inpatient_only": false,
+  "isolation_required_not_possible_outside_hospital": false
+}
