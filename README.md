@@ -58,18 +58,13 @@ The policy logic evaluates these flags and generates:
 
 ## How to Run
 
-### TRUE case
+Run the script with a JSON input file representing a patient.
 
 ```bash
+# TRUE Case (Admission Expected)
 python policy_json.py --input patient_true.json
 
-### FALSE case
-
-```bash
+# FALSE Case (No Admission Expected)
 python policy_json.py --input patient_false.json
 
 
-<<<<<<< HEAD
-FALSE case: python policy_json.py --input patient_false.json
-=======
->>>>>>> 36091fa (Fix README formatting)
