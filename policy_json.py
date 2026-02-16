@@ -8,7 +8,7 @@ import json
 import argparse
 import sys
 
-
+# Criteria labels as per given in the policy rules
 CRITERIA_LABELS: Dict[str, str] = {
     "hemodynamic_instability": "Hemodynamic instability",
     "bacteremia_if_cultures_performed": "Bacteremia (if blood cultures performed)",
@@ -25,7 +25,7 @@ CRITERIA_LABELS: Dict[str, str] = {
     "isolation_required_not_possible_outside_hospital": "Isolation required not possible outside hospital",
 }
 
-
+# to check if the criteria is present and stores it for calculations
 @dataclass
 class MCGSepsisAdmissionFlags:
     hemodynamic_instability: Optional[bool] = None
@@ -44,7 +44,7 @@ class MCGSepsisAdmissionFlags:
     patient_id: Optional[str] = None
     encounter_id: Optional[str] = None
 
-
+# to store the output
 @dataclass
 class PolicyDecision:
     admit_inpatient: bool
@@ -138,7 +138,7 @@ def load_flags_from_json(path: str) -> tuple[MCGSepsisAdmissionFlags, list[str]]
     return flags, warnings
 
 
-
+# To present a formatted output
 def print_decision(flags: MCGSepsisAdmissionFlags, decision: PolicyDecision, warnings: list[str] | None = None) -> None:
     print("\nMCG Sepsis Admission Policy")
     print("--------------------------------")
